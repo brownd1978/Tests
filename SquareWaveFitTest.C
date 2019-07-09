@@ -20,6 +20,7 @@ using namespace chrono;
 
 bool squarewave(float lambda, float phase, float width, float x){
   float val = fmod(x-phase,lambda);
+  if(val<0) val += lambda;
   return (val >=0.0 && val < width);
 }
 
@@ -93,8 +94,8 @@ SquareWaveFitTest::SquareWaveFitTest() : _fnbits(nbits) {
   _hover = new TH1F("hover","Best Overlap",nbits+1,-0.5,nbits+0.5);
   _hmod = new TH1F("hmod","Best Model",_bitmodels.size()+1,-0.5,_bitmodels.size()+0.5);
   _hlambda = new TH1F("hlambda","Wavelength;#Lambda",100,0.0,0.6);
-  _hphase = new TH1F("hphase","Phase",100,-0.5,0.5);
-  _hwidth = new TH1F("hwidth","Width",100,0.0,0.5);
+  _hphase = new TH1F("hphase","Phase",100,0.0,1.0);
+  _hwidth = new TH1F("hwidth","Width",100,0.0,1.0);
   _hdur = new TH1F("hdur","Search Time;#mu seconds",51,-0.5,50.5);
   // random engine
   _rand = TRandom3(1238123);
@@ -107,7 +108,7 @@ SquareWaveFitTest::SquareWaveFitTest() : _fnbits(nbits) {
   // exhaustive loop over reasonable models
   for(size_t ilambda=2;ilambda<nbits/2;ilambda++){
     float lambda = ilambda/_fnbits;
-    for(int iphase=-ilambda/2;iphase <= int(ilambda/2); iphase++){
+    for(int iphase=0; iphase <= (int)ilambda; iphase++){
       float phase = iphase/_fnbits;
       for(size_t iwidth=1; iwidth < ilambda-1; iwidth++){
 	float width = iwidth/_fnbits;
@@ -147,14 +148,14 @@ void SquareWaveFitTest::setRandom(bset const& model, bset& rbits,float eff,float
 }
 bool SquareWaveFitTest::badParams(float lambda, float phase, float width) {
   return lambda < 2.0/_fnbits || lambda > 0.5 ||
-    phase < -0.5*lambda || phase > 0.5*lambda ||
+    phase < 0.0 || phase > lambda ||
     width < 1.0/_fnbits || width > lambda-1.0/_fnbits;
 }
 
 void SquareWaveFitTest::setbits(bset& bits,float lambda, float phase, float width) {
   // set bits for original model
   for(size_t ibit = 0; ibit < nbits; ibit++){
-    float x = float(ibit)/float(nbits);
+    float x = (float(ibit)+0.5)/float(nbits);
     bits.set(ibit,squarewave(lambda,phase,width,x));
   }
 }
